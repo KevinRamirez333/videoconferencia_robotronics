@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Login from '@/views/login/login.vue'
 import Panel from '@/views/panel/panel.vue'
+import Sesiones from '@/views/sesiones/sesiones.vue'
 import { obtenerUsuario } from '@/services/sesionUsuario'
 
 const router = createRouter({
@@ -15,6 +16,12 @@ const router = createRouter({
       path: '/panel',
       name: 'panel',
       component: Panel,
+      meta: { requiereAutenticacion: true },
+    },
+    {
+      path: '/sesiones',
+      name: 'sesiones',
+      component: Sesiones,
       meta: { requiereAutenticacion: true },
     },
   ],

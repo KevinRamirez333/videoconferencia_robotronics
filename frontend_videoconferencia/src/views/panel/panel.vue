@@ -4,9 +4,12 @@
       <i class="bi bi-check-circle-fill fs-1 text-success"></i>
       <h1 class="h3 mt-3 mb-1">Bienvenido, {{ usuario?.nombre }}</h1>
       <p class="text-muted">Sesión iniciada como {{ usuario?.correo }}</p>
-      <button type="button" class="btn btn-outline-danger mt-3" @click="manejarCerrarSesion">
-        Cerrar sesión
-      </button>
+      <div class="d-flex gap-2 justify-content-center mt-3">
+        <RouterLink to="/sesiones" class="btn btn-primary">Planificar sesión</RouterLink>
+        <button type="button" class="btn btn-outline-danger" @click="manejarCerrarSesion">
+          Cerrar sesión
+        </button>
+      </div>
     </div>
   </div>
 </template>

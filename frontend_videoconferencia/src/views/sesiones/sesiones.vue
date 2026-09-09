@@ -89,7 +89,7 @@
 
       <div class="card shadow-sm">
         <div class="card-body p-4">
-          <h2 class="h5 mb-3">Sesiones planificadas</h2>
+          <h2 class="h5 mb-3">Todas las sesiones planificadas</h2>
 
           <p v-if="cargandoLista" class="text-muted mb-0">Cargando sesiones...</p>
           <p v-else-if="sesiones.length === 0" class="text-muted mb-0">
@@ -107,7 +107,7 @@
               </div>
               <div class="d-flex align-items-center gap-2">
                 <span class="badge text-capitalize" :class="claseBadgeEstado(sesion.estado)">{{ sesion.estado }}</span>
-                <template v-if="sesion.estado === 'activa'">
+                <template v-if="sesion.estado === 'activa' && esOrganizador(sesion)">
                   <button type="button" class="btn btn-sm btn-outline-primary" @click="iniciarEdicion(sesion)">
                     Editar
                   </button>
@@ -189,9 +189,9 @@ async function cargarSesiones(): Promise<void> {
 
   try {
     const todasLasSesiones = await sesionServicio.listarSesiones()
-    sesiones.value = todasLasSesiones
-      .filter((sesion) => sesion.anfitrionId === usuarioActual?._id)
-      .sort((a, b) => new Date(a.inicioEn ?? 0).getTime() - new Date(b.inicioEn ?? 0).getTime())
+    sesiones.value = [...todasLasSesiones].sort(
+      (a, b) => new Date(a.inicioEn ?? 0).getTime() - new Date(b.inicioEn ?? 0).getTime(),
+    )
   } catch {
     sesiones.value = []
   } finally {
@@ -222,6 +222,10 @@ function cancelarEdicion(): void {
   limpiarFormulario()
   mensajeError.value = ''
   mensajeExito.value = ''
+}
+
+function esOrganizador(sesion: Sesion): boolean {
+  return sesion.anfitrionId === usuarioActual?._id
 }
 
 function claseBadgeEstado(estado: EstadoSesion): string {

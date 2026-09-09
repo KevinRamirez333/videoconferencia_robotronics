@@ -28,3 +28,21 @@ export const actualizarSesion = async (req: Request, res: Response): Promise<voi
 
     res.json(sesion);
 };
+
+export const anularSesion = async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+
+    if (typeof id !== 'string') {
+        res.status(400).json({ mensaje: 'El id de la sesión es obligatorio' });
+        return;
+    }
+
+    const sesion = await sesionServicio.anularSesion(id);
+
+    if (!sesion) {
+        res.status(404).json({ mensaje: 'Sesión no encontrada' });
+        return;
+    }
+
+    res.json(sesion);
+};

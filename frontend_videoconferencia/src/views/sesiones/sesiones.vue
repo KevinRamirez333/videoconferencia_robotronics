@@ -89,7 +89,7 @@
 
       <div class="card shadow-sm">
         <div class="card-body p-4">
-          <h2 class="h5 mb-3">Sesiones planificadas</h2>
+          <h2 class="h5 mb-3">Todas las sesiones planificadas</h2>
 
           <p v-if="cargandoLista" class="text-muted mb-0">Cargando sesiones...</p>
           <p v-else-if="sesiones.length === 0" class="text-muted mb-0">
@@ -106,10 +106,15 @@
                 <div class="text-muted small">{{ formatearFecha(sesion.inicioEn) }}</div>
               </div>
               <div class="d-flex align-items-center gap-2">
-                <span class="badge text-bg-secondary text-capitalize">{{ sesion.estado }}</span>
-                <button type="button" class="btn btn-sm btn-outline-primary" @click="iniciarEdicion(sesion)">
-                  Editar
-                </button>
+                <span class="badge text-capitalize" :class="claseBadgeEstado(sesion.estado)">{{ sesion.estado }}</span>
+                <template v-if="sesion.estado === 'activa' && esOrganizador(sesion)">
+                  <button type="button" class="btn btn-sm btn-outline-primary" @click="iniciarEdicion(sesion)">
+                    Editar
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-danger" @click="manejarAnularSesion(sesion)">
+                    Anular
+                  </button>
+                </template>
               </div>
             </li>
           </ul>
@@ -122,7 +127,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { isAxiosError } from 'axios'
-import { sesionServicio, type Sesion } from '@/services/sesion.servicio'
+import { sesionServicio, type EstadoSesion, type Sesion } from '@/services/sesion.servicio'
 import { obtenerUsuario } from '@/services/sesionUsuario'
 
 const usuarioActual = obtenerUsuario()
@@ -184,9 +189,9 @@ async function cargarSesiones(): Promise<void> {
 
   try {
     const todasLasSesiones = await sesionServicio.listarSesiones()
-    sesiones.value = todasLasSesiones
-      .filter((sesion) => sesion.anfitrionId === usuarioActual?._id)
-      .sort((a, b) => new Date(a.inicioEn ?? 0).getTime() - new Date(b.inicioEn ?? 0).getTime())
+    sesiones.value = [...todasLasSesiones].sort(
+      (a, b) => new Date(a.inicioEn ?? 0).getTime() - new Date(b.inicioEn ?? 0).getTime(),
+    )
   } catch {
     sesiones.value = []
   } finally {
@@ -217,6 +222,50 @@ function cancelarEdicion(): void {
   limpiarFormulario()
   mensajeError.value = ''
   mensajeExito.value = ''
+}
+
+function esOrganizador(sesion: Sesion): boolean {
+  return sesion.anfitrionId === usuarioActual?._id
+}
+
+function claseBadgeEstado(estado: EstadoSesion): string {
+  if (estado === 'anulada') {
+    return 'text-bg-danger'
+  }
+
+  if (estado === 'finalizada') {
+    return 'text-bg-secondary'
+  }
+
+  return 'text-bg-success'
+}
+
+async function manejarAnularSesion(sesion: Sesion): Promise<void> {
+  mensajeError.value = ''
+  mensajeExito.value = ''
+
+  const confirmado = window.confirm(`¿Seguro que deseas anular la sesión "${sesion.titulo}"?`)
+
+  if (!confirmado) {
+    return
+  }
+
+  try {
+    await sesionServicio.anularSesion(sesion._id)
+    mensajeExito.value = 'Sesión anulada correctamente'
+
+    if (sesionEditandoId.value === sesion._id) {
+      limpiarFormulario()
+    }
+
+    await cargarSesiones()
+  } catch (error) {
+    if (isAxiosError(error) && error.response) {
+      mensajeError.value = error.response.data?.mensaje ?? 'No se pudo anular la sesión'
+    } else {
+      mensajeError.value = 'No se pudo conectar con el servidor'
+    }
+  }
 }
 
 async function manejarGuardarSesion(): Promise<void> {

@@ -1,6 +1,6 @@
 import api from './api'
 
-export type EstadoSesion = 'activa' | 'finalizada'
+export type EstadoSesion = 'activa' | 'finalizada' | 'anulada'
 
 export interface Sesion {
   _id: string
@@ -38,6 +38,11 @@ export const sesionServicio = {
 
   async actualizarSesion(id: string, datos: DatosActualizarSesion): Promise<Sesion> {
     const { data } = await api.put<Sesion>(`/sesiones/${id}`, datos)
+    return data
+  },
+
+  async anularSesion(id: string): Promise<Sesion> {
+    const { data } = await api.patch<Sesion>(`/sesiones/${id}/anular`)
     return data
   },
 }

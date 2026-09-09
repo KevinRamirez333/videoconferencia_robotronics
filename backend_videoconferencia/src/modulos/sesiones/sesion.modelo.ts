@@ -1,6 +1,6 @@
 import { Schema, model, Document, Types } from 'mongoose';
 
-export type EstadoSesion = 'activa' | 'finalizada';
+export type EstadoSesion = 'activa' | 'finalizada' | 'anulada';
 
 export interface ISesion extends Document {
     titulo: string;
@@ -14,7 +14,7 @@ export interface ISesion extends Document {
 const sesionEsquema = new Schema<ISesion>({
     titulo: { type: String, required: true, trim: true },
     anfitrionId: { type: Schema.Types.ObjectId, ref: 'Usuario', required: true },
-    estado: { type: String, enum: ['activa', 'finalizada'], default: 'activa' },
+    estado: { type: String, enum: ['activa', 'finalizada', 'anulada'], default: 'activa' },
     inicioEn: { type: Date },
     finEn: { type: Date },
 }, {

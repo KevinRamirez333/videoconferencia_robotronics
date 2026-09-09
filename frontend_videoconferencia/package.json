@@ -13,7 +13,10 @@
   },
   "dependencies": {
     "axios": "^1.20.0",
+<<<<<<< HEAD
     "boostrap": "^2.0.0",
+=======
+>>>>>>> origin/feature/sala
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
     "vue": "rc",

@@ -107,13 +107,18 @@
               </div>
               <div class="d-flex align-items-center gap-2">
                 <span class="badge text-capitalize" :class="claseBadgeEstado(sesion.estado)">{{ sesion.estado }}</span>
-                <template v-if="sesion.estado === 'activa' && esOrganizador(sesion)">
-                  <button type="button" class="btn btn-sm btn-outline-primary" @click="iniciarEdicion(sesion)">
-                    Editar
-                  </button>
-                  <button type="button" class="btn btn-sm btn-outline-danger" @click="manejarAnularSesion(sesion)">
-                    Anular
-                  </button>
+                <template v-if="sesion.estado === 'activa'">
+                  <RouterLink :to="{ name: 'sala', params: { sesionId: sesion._id } }" class="btn btn-sm btn-success">
+                    Entrar a la sala
+                  </RouterLink>
+                  <template v-if="esOrganizador(sesion)">
+                    <button type="button" class="btn btn-sm btn-outline-primary" @click="iniciarEdicion(sesion)">
+                      Editar
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" @click="manejarAnularSesion(sesion)">
+                      Anular
+                    </button>
+                  </template>
                 </template>
               </div>
             </li>
@@ -127,7 +132,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { isAxiosError } from 'axios'
-import { sesionServicio, type EstadoSesion, type Sesion } from '@/services/sesion.servicio'
+import { sesionServicio, idDelAnfitrion, type EstadoSesion, type Sesion } from '@/services/sesion.servicio'
 import { obtenerUsuario } from '@/services/sesionUsuario'
 
 const usuarioActual = obtenerUsuario()
@@ -225,7 +230,7 @@ function cancelarEdicion(): void {
 }
 
 function esOrganizador(sesion: Sesion): boolean {
-  return sesion.anfitrionId === usuarioActual?._id
+  return idDelAnfitrion(sesion) === usuarioActual?._id
 }
 
 function claseBadgeEstado(estado: EstadoSesion): string {

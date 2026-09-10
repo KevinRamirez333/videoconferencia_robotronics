@@ -4,4 +4,5 @@ import { IParticipante } from './participante.modelo';
 export const participanteServicio = {
     listarParticipantes: () => participanteRepositorio.listar(),
     crearParticipante: (datos: Partial<IParticipante>) => participanteRepositorio.crear(datos),
+    registrarSalida: (sesionId: string, usuarioId: string) => participanteRepositorio.registrarSalida(sesionId, usuarioId),
 };

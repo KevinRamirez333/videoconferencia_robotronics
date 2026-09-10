@@ -1,16 +1,16 @@
 <template>
-  <div class="pantalla-panel d-flex align-items-center justify-content-center">
-    <div class="text-center">
-      <i class="bi bi-check-circle-fill fs-1 text-success"></i>
-      <h1 class="h3 mt-3 mb-1">Bienvenido, {{ usuario?.nombre }}</h1>
-      <p class="text-muted">Sesión iniciada como {{ usuario?.correo }}</p>
-      <div class="d-flex gap-2 justify-content-center mt-3">
-        <RouterLink to="/sesiones" class="btn btn-primary">Planificar sesión</RouterLink>
-        <button type="button" class="btn btn-outline-danger" @click="manejarCerrarSesion">
-          Cerrar sesión
-        </button>
+  <div class="pantalla-panel d-flex">
+    <MenuLateral :usuario="usuario" @unirse-reunion="abrirModalUnirse" @cerrar-sesion="manejarCerrarSesion" />
+
+    <div class="flex-grow-1 d-flex align-items-center justify-content-center p-4">
+      <div class="text-center">
+        <i class="bi bi-check-circle-fill fs-1 text-success"></i>
+        <h1 class="h3 mt-3 mb-1">Bienvenido, {{ usuario?.nombre }}</h1>
+        <p class="text-muted">Sesión iniciada como {{ usuario?.correo }}</p>
       </div>
     </div>
+
+    <ModalUnirseReunion ref="modalUnirse" />
   </div>
 </template>
 
@@ -19,13 +19,20 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Usuario } from '@/services/autenticacion.servicio'
 import { eliminarUsuario, obtenerUsuario } from '@/services/sesionUsuario'
+import MenuLateral from '@/components/menuLateral/menuLateral.vue'
+import ModalUnirseReunion from '@/components/modalUnirseReunion/modalUnirseReunion.vue'
 
 const router = useRouter()
 const usuario = ref<Usuario | null>(null)
+const modalUnirse = ref<InstanceType<typeof ModalUnirseReunion> | null>(null)
 
 onMounted(() => {
   usuario.value = obtenerUsuario()
 })
+
+function abrirModalUnirse(): void {
+  modalUnirse.value?.abrir()
+}
 
 function manejarCerrarSesion(): void {
   eliminarUsuario()
@@ -36,6 +43,5 @@ function manejarCerrarSesion(): void {
 <style scoped>
 .pantalla-panel {
   min-height: 100vh;
-  padding: 1.5rem;
 }
 </style>

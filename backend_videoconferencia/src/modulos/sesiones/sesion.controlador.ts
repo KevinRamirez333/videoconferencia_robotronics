@@ -6,6 +6,24 @@ export const listarSesiones = async (_req: Request, res: Response): Promise<void
     res.json(sesiones);
 };
 
+export const obtenerSesion = async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+
+    if (typeof id !== 'string') {
+        res.status(400).json({ mensaje: 'El id de la sesión es obligatorio' });
+        return;
+    }
+
+    const sesion = await sesionServicio.obtenerSesionPorId(id);
+
+    if (!sesion) {
+        res.status(404).json({ mensaje: 'Sesión no encontrada' });
+        return;
+    }
+
+    res.json(sesion);
+};
+
 export const crearSesion = async (req: Request, res: Response): Promise<void> => {
     const sesion = await sesionServicio.crearSesion(req.body);
     res.status(201).json(sesion);

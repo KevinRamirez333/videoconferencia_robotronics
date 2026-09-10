@@ -30,9 +30,10 @@ const router = createRouter({
 
     },
     {
-      path: '/sala',
+      path: '/sala/:sesionId',
       name: 'sala',
       component: Sala,
+      meta: { requiereAutenticacion: true },
     },
   ],
 })

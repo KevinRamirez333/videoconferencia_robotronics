@@ -11,6 +11,9 @@ node_modules/
 # Compilación
 dist/
 
+# Certificado autofirmado para pruebas HTTPS locales
+certs/
+
 # Logs
 *.log
 

@@ -122,15 +122,17 @@ function obtenerOCrearParticipante(socketId: string, usuarioRemoto: UsuarioRemot
   }
 
   conexion.ontrack = (evento) => {
-    // Como ahora el otro lado agrupa audio y video en un solo stream compartido
-    // (ver flujoLocalCompartido), "evento.streams[0]" ya viene con ambas pistas
-    // agrupadas por el navegador; no hace falta combinarlas a mano aquí.
-    //
-    // Importante: se reemplaza el objeto completo con Map.set(...) (no
-    // "entrada.stream = ...") para que Vue detecte el cambio y muestre el
-    // video/audio de inmediato en vez de esperar a que otro evento fuerce un
-    // refresco de la pantalla.
-    participantesEnPantalla.set(socketId, { usuario: usuarioRemoto, stream: evento.streams[0] ?? null })
+    // ontrack se ejecuta por cada pista. Se conserva el stream que ya se
+    // reproduce para que la llegada del video no sustituya la pista de audio.
+    const visible = participantesEnPantalla.get(socketId)
+    const streamCombinado = visible?.stream ?? new MediaStream()
+
+    if (!streamCombinado.getTracks().includes(evento.track)) {
+      streamCombinado.addTrack(evento.track)
+    }
+
+    evento.track.addEventListener('ended', () => streamCombinado.removeTrack(evento.track))
+    participantesEnPantalla.set(socketId, { usuario: usuarioRemoto, stream: streamCombinado })
   }
 
   conexion.onnegotiationneeded = async () => {

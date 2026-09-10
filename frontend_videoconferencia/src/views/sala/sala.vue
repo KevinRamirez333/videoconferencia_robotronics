@@ -63,6 +63,14 @@ const solicitando = reactive({ audio: false, video: false })
 const errores = reactive({ audio: '', video: '' })
 const videoLocal = ref<HTMLVideoElement | null>(null)
 const flujos: Record<Dispositivo, MediaStream | null> = { audio: null, video: null }
+// La cámara y el micrófono se piden por separado (dos llamadas a getUserMedia),
+// así que cada uno trae su propio MediaStream. Si se enviaran cada uno con su
+// stream original, el otro lado los recibiría como dos transmisiones "sin
+// relación" entre sí; en la práctica eso provocaba que activar/desactivar la
+// cámara interrumpiera el audio ya conectado. Por eso todas las pistas locales
+// (audio y video) se agregan a este único stream compartido antes de enviarlas,
+// para que el navegador las agrupe como una sola transmisión de principio a fin.
+const flujoLocalCompartido = new MediaStream()
 let salaCerrada = false
 
 // Cuando ambos lados intentan renegociar la conexión al mismo tiempo (ej. los dos
@@ -74,15 +82,17 @@ function debeCederElPasoAntesChoque(socketIdRemoto: string): boolean {
 }
 
 function vincularVideoRemoto(elemento: Element | null, entrada: ParticipanteEnPantalla): void {
-  if (elemento instanceof HTMLVideoElement) {
+  // La plantilla vuelve a ejecutar esta función en cada actualización de Vue,
+  // aunque el stream remoto no haya cambiado. Reasignar "srcObject" al mismo
+  // MediaStream de todas formas puede reiniciar la reproducción y cortar el
+  // audio un instante; por eso solo se asigna cuando realmente cambió.
+  if (elemento instanceof HTMLVideoElement && elemento.srcObject !== entrada.stream) {
     elemento.srcObject = entrada.stream
   }
 }
 
 function agregarPistasLocales(conexion: RTCPeerConnection): void {
-  for (const flujo of Object.values(flujos)) {
-    flujo?.getTracks().forEach((pista) => conexion.addTrack(pista, flujo))
-  }
+  flujoLocalCompartido.getTracks().forEach((pista) => conexion.addTrack(pista, flujoLocalCompartido))
 }
 
 function obtenerOCrearParticipante(socketId: string, usuarioRemoto: UsuarioRemoto): ConexionParticipante {
@@ -112,28 +122,15 @@ function obtenerOCrearParticipante(socketId: string, usuarioRemoto: UsuarioRemot
   }
 
   conexion.ontrack = (evento) => {
-    // El audio y el video se piden por separado (dos llamadas a getUserMedia),
-    // así que llegan en dos MediaStream distintos y "ontrack" se dispara una vez
-    // por cada uno. Si aquí solo guardáramos evento.streams[0], la pista más
-    // reciente (ej. el video al activar la cámara) reemplazaría por completo al
-    // stream anterior y se perdería el audio ya conectado. Por eso se junta cada
-    // pista nueva en un mismo MediaStream que se reutiliza durante toda la llamada.
-    const visible = participantesEnPantalla.get(socketId)
-    const streamCombinado = visible?.stream ?? new MediaStream()
-
-    if (!streamCombinado.getTracks().includes(evento.track)) {
-      streamCombinado.addTrack(evento.track)
-    }
-
-    // Si la otra persona apaga esa pista (ej. desactiva la cámara), se quita del
-    // stream combinado para no dejar un cuadro congelado.
-    evento.track.addEventListener('ended', () => streamCombinado.removeTrack(evento.track))
-
+    // Como ahora el otro lado agrupa audio y video en un solo stream compartido
+    // (ver flujoLocalCompartido), "evento.streams[0]" ya viene con ambas pistas
+    // agrupadas por el navegador; no hace falta combinarlas a mano aquí.
+    //
     // Importante: se reemplaza el objeto completo con Map.set(...) (no
     // "entrada.stream = ...") para que Vue detecte el cambio y muestre el
     // video/audio de inmediato en vez de esperar a que otro evento fuerce un
     // refresco de la pantalla.
-    participantesEnPantalla.set(socketId, { usuario: usuarioRemoto, stream: streamCombinado })
+    participantesEnPantalla.set(socketId, { usuario: usuarioRemoto, stream: evento.streams[0] ?? null })
   }
 
   conexion.onnegotiationneeded = async () => {
@@ -258,6 +255,7 @@ function detenerDispositivo(tipo: Dispositivo) {
         entrada.conexion.removeTrack(remitente)
       }
     }
+    flujo.getTracks().forEach((pista) => flujoLocalCompartido.removeTrack(pista))
   }
 
   flujo?.getTracks().forEach((pista) => pista.stop())
@@ -300,8 +298,11 @@ async function alternarDispositivo(tipo: Dispositivo) {
         errores[tipo] =
           'El dispositivo se desconectó o dejó de estar disponible. Intenta activarlo de nuevo.'
       })
+      // Se agrega al stream compartido (no al "flujo" suelto de getUserMedia)
+      // para que audio y video viajen agrupados como una sola transmisión.
+      flujoLocalCompartido.addTrack(pista)
       for (const entrada of participantes.values()) {
-        entrada.conexion.addTrack(pista, flujo)
+        entrada.conexion.addTrack(pista, flujoLocalCompartido)
       }
     })
     activos[tipo] = true

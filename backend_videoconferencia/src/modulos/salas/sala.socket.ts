@@ -62,6 +62,20 @@ async function admitirParticipante(
         usuario: { _id: participante.usuarioId, nombre: participante.nombre },
     });
 
+    // Si quien se acaba de admitir es el anfitrión, hay que avisarle de las
+    // personas que ya estaban esperando desde antes (por ejemplo, alguien intentó
+    // entrar mientras el anfitrión todavía no se había conectado, o el anfitrión
+    // se desconectó y vuelve a entrar). Sin esto, esas solicitudes quedaban
+    // guardadas en el servidor pero nunca se le mostraban al anfitrión.
+    if (esAnfitrion) {
+        for (const enEspera of salaEstado.obtenerEnEspera(sesionId)) {
+            socket.emit('sala:solicitudIngreso', {
+                socketId: enEspera.socketId,
+                usuario: { _id: enEspera.usuarioId, nombre: enEspera.nombre },
+            });
+        }
+    }
+
     try {
         await participanteServicio.crearParticipante({
             sesionId: new Types.ObjectId(sesionId),

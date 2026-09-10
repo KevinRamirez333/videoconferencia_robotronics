@@ -16,14 +16,27 @@ interface SolicitudIngreso {
   usuario: UsuarioRemoto
 }
 
+// Estado interno de la conexión WebRTC con un participante. Es información de
+// trabajo (banderas de negociación, el objeto RTCPeerConnection) que la
+// plantilla nunca lee directamente, así que se guarda en un Map normal, sin
+// reactividad de Vue.
 interface ConexionParticipante {
   socketId: string
   usuario: UsuarioRemoto
   conexion: RTCPeerConnection
-  stream: MediaStream | null
   debeCederAnteChoque: boolean
   haciendoOferta: boolean
   respuestaPendiente: boolean
+}
+
+// Lo que sí muestra la plantilla (nombre + video/audio) de cada participante.
+// Se mantiene aparte y siempre se reemplaza con Map.set(...) (nunca se muta una
+// propiedad suelta) para que Vue detecte el cambio al instante: si solo se hace
+// "objeto.stream = nuevoStream" sobre un objeto plano, Vue no se entera y la
+// imagen/audio no aparece hasta que otra cosa fuerce un refresco de la pantalla.
+interface ParticipanteEnPantalla {
+  usuario: UsuarioRemoto
+  stream: MediaStream | null
 }
 
 type EstadoConexion = 'conectando' | 'esperando' | 'admitido' | 'rechazado' | 'error'
@@ -38,8 +51,11 @@ const sesion = ref<Sesion | null>(null)
 const estadoConexion = ref<EstadoConexion>('conectando')
 const mensajeEstado = ref('')
 const solicitudesPendientes = ref<SolicitudIngreso[]>([])
-const participantes = reactive(new Map<string, ConexionParticipante>())
-const listaParticipantes = computed(() => [...participantes.values()])
+const participantes = new Map<string, ConexionParticipante>()
+const participantesEnPantalla = reactive(new Map<string, ParticipanteEnPantalla>())
+const listaParticipantes = computed(() =>
+  [...participantesEnPantalla.entries()].map(([socketId, datos]) => ({ socketId, ...datos })),
+)
 
 type Dispositivo = 'audio' | 'video'
 const activos = reactive({ audio: false, video: false })
@@ -57,7 +73,7 @@ function debeCederElPasoAntesChoque(socketIdRemoto: string): boolean {
   return socket.id! > socketIdRemoto
 }
 
-function vincularVideoRemoto(elemento: Element | null, entrada: ConexionParticipante): void {
+function vincularVideoRemoto(elemento: Element | null, entrada: ParticipanteEnPantalla): void {
   if (elemento instanceof HTMLVideoElement) {
     elemento.srcObject = entrada.stream
   }
@@ -80,11 +96,14 @@ function obtenerOCrearParticipante(socketId: string, usuarioRemoto: UsuarioRemot
     socketId,
     usuario: usuarioRemoto,
     conexion,
-    stream: null,
     debeCederAnteChoque: debeCederElPasoAntesChoque(socketId),
     haciendoOferta: false,
     respuestaPendiente: false,
   }
+
+  // Se crea ya mismo la entrada visible (sin video todavía) para que el
+  // participante aparezca en la reunión aunque aún no llegue su cámara/mic.
+  participantesEnPantalla.set(socketId, { usuario: usuarioRemoto, stream: null })
 
   conexion.onicecandidate = ({ candidate }) => {
     if (candidate) {
@@ -93,7 +112,28 @@ function obtenerOCrearParticipante(socketId: string, usuarioRemoto: UsuarioRemot
   }
 
   conexion.ontrack = (evento) => {
-    entrada.stream = evento.streams[0] ?? null
+    // El audio y el video se piden por separado (dos llamadas a getUserMedia),
+    // así que llegan en dos MediaStream distintos y "ontrack" se dispara una vez
+    // por cada uno. Si aquí solo guardáramos evento.streams[0], la pista más
+    // reciente (ej. el video al activar la cámara) reemplazaría por completo al
+    // stream anterior y se perdería el audio ya conectado. Por eso se junta cada
+    // pista nueva en un mismo MediaStream que se reutiliza durante toda la llamada.
+    const visible = participantesEnPantalla.get(socketId)
+    const streamCombinado = visible?.stream ?? new MediaStream()
+
+    if (!streamCombinado.getTracks().includes(evento.track)) {
+      streamCombinado.addTrack(evento.track)
+    }
+
+    // Si la otra persona apaga esa pista (ej. desactiva la cámara), se quita del
+    // stream combinado para no dejar un cuadro congelado.
+    evento.track.addEventListener('ended', () => streamCombinado.removeTrack(evento.track))
+
+    // Importante: se reemplaza el objeto completo con Map.set(...) (no
+    // "entrada.stream = ...") para que Vue detecte el cambio y muestre el
+    // video/audio de inmediato en vez de esperar a que otro evento fuerce un
+    // refresco de la pantalla.
+    participantesEnPantalla.set(socketId, { usuario: usuarioRemoto, stream: streamCombinado })
   }
 
   conexion.onnegotiationneeded = async () => {
@@ -145,6 +185,7 @@ async function alRecibirDescripcion(
 function cerrarParticipante(socketId: string): void {
   participantes.get(socketId)?.conexion.close()
   participantes.delete(socketId)
+  participantesEnPantalla.delete(socketId)
 }
 
 function registrarEventosSocket(): void {
@@ -312,6 +353,7 @@ onBeforeUnmount(() => {
     entrada.conexion.close()
   }
   participantes.clear()
+  participantesEnPantalla.clear()
   cerrarSocket()
 })
 </script>

@@ -19,7 +19,7 @@ export async function obtenerCertificadoDesarrollo(): Promise<ICertificadoDesarr
         };
     }
 
-    const atributos = [{ name: 'commonName', value: 'videoconferencia-robotronics.local' }];
+    const atributos = [{ name: 'commonName', value: '25.30.162.197:3000' }];
     const generado = await selfsigned.generate(atributos, {
         notAfterDate: new Date(Date.now() + 825 * 24 * 60 * 60 * 1000),
         keySize: 2048,

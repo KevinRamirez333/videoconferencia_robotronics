@@ -1,10 +1,7 @@
 <template>
   <div class="pantalla-sesiones py-4 py-md-5">
     <div class="container" style="max-width: 720px">
-      <div class="d-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0">Planificar sesión</h1>
-        <RouterLink to="/panel" class="btn btn-link">Volver al panel</RouterLink>
-      </div>
+      <h1 class="h3 mb-4">Planificar sesión</h1>
 
       <div class="card shadow-sm mb-4">
         <div class="card-body p-4">

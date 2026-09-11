@@ -28,9 +28,27 @@ const emit = defineEmits<{
 
     <ul class="nav nav-pills flex-column mb-auto gap-1">
       <li class="nav-item">
+        <RouterLink to="/panel" class="nav-link text-white d-flex align-items-center gap-2">
+          <i class="bi bi-house-door"></i>
+          Inicio
+        </RouterLink>
+      </li>
+      <li class="nav-item">
         <RouterLink to="/sesiones" class="nav-link text-white d-flex align-items-center gap-2">
           <i class="bi bi-calendar-plus"></i>
           Planificar sesión
+        </RouterLink>
+      </li>
+      <li class="nav-item">
+        <RouterLink to="/usuarios" class="nav-link text-white d-flex align-items-center gap-2">
+          <i class="bi bi-people"></i>
+          Usuarios
+        </RouterLink>
+      </li>
+      <li class="nav-item">
+        <RouterLink to="/participantes" class="nav-link text-white d-flex align-items-center gap-2">
+          <i class="bi bi-person-lines-fill"></i>
+          Participantes
         </RouterLink>
       </li>
       <li class="nav-item">

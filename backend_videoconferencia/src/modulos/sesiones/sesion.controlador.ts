@@ -33,7 +33,6 @@ export const crearSesion = async (req: Request, res: Response): Promise<void> =>
     res.status(201).json(sesion);
 };
 
-<<<<<<< HEAD
 export const actualizarSesion = async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
 
@@ -68,7 +67,8 @@ export const anularSesion = async (req: Request, res: Response): Promise<void> =
     }
 
     res.json(sesion);
-=======
+};
+
 export const listarSesionesRecientes = async (req: Request, res: Response): Promise<void> => {
     const limite = Number(req.query.limite) || 5;
     const sesiones = await sesionServicio.listarSesionesRecientes(limite);
@@ -85,5 +85,4 @@ export const buscarSesiones = async (req: Request, res: Response): Promise<void>
 
     const sesiones = await sesionServicio.buscarSesiones(escaparCaracteresEspeciales(texto));
     res.json(sesiones);
->>>>>>> origin/feature/UsuariosParticipantes
 };

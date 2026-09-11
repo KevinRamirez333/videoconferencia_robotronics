@@ -2,12 +2,8 @@
   <div class="pantalla-panel d-flex">
     <MenuLateral :usuario="usuario" @unirse-reunion="abrirModalUnirse" @cerrar-sesion="manejarCerrarSesion" />
 
-    <div class="flex-grow-1 d-flex align-items-center justify-content-center p-4">
-      <div class="text-center">
-        <i class="bi bi-check-circle-fill fs-1 text-success"></i>
-        <h1 class="h3 mt-3 mb-1">Bienvenido, {{ usuario?.nombre }}</h1>
-        <p class="text-muted">Sesión iniciada como {{ usuario?.correo }}</p>
-      </div>
+    <div class="flex-grow-1">
+      <RouterView />
     </div>
 
     <ModalUnirseReunion ref="modalUnirse" />

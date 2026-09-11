@@ -10,3 +10,32 @@ export const crearUsuario = async (req: Request, res: Response): Promise<void> =
     const usuario = await usuarioServicio.crearUsuario(req.body);
     res.status(201).json(usuario);
 };
+
+export const actualizarUsuario = async (req: Request, res: Response): Promise<void> => {
+    const usuario = await usuarioServicio.actualizarUsuario(req.params.id as string, req.body);
+
+    if (!usuario) {
+        res.status(404).json({ mensaje: 'Usuario no encontrado' });
+        return;
+    }
+
+    res.json(usuario);
+};
+
+export const cambiarEstadoUsuario = async (req: Request, res: Response): Promise<void> => {
+    const { activo } = req.body;
+
+    if (typeof activo !== 'boolean') {
+        res.status(400).json({ mensaje: 'El campo "activo" es obligatorio y debe ser booleano' });
+        return;
+    }
+
+    const usuario = await usuarioServicio.cambiarEstadoUsuario(req.params.id as string, activo);
+
+    if (!usuario) {
+        res.status(404).json({ mensaje: 'Usuario no encontrado' });
+        return;
+    }
+
+    res.json(usuario);
+};

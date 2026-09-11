@@ -5,6 +5,7 @@ export interface IUsuario extends Document {
     nombre: string;
     correo: string;
     contrasena: string;
+    activo: boolean;
     creadoEn: Date;
     compararContrasena(contrasenaIngresada: string): Promise<boolean>;
 }
@@ -13,6 +14,7 @@ const usuarioEsquema = new Schema<IUsuario>({
     nombre: { type: String, required: true, trim: true },
     correo: { type: String, required: true, unique: true, trim: true, lowercase: true },
     contrasena: { type: String, required: true, select: false },
+    activo: { type: Boolean, default: true },
 }, {
     timestamps: { createdAt: 'creadoEn', updatedAt: false },
     toJSON: {

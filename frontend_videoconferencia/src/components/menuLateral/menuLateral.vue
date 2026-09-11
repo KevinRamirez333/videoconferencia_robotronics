@@ -82,7 +82,7 @@ const emit = defineEmits<{
 }
 
 .nav-link:hover,
-.nav-link.router-link-active {
+.nav-link.router-link-exact-active {
   background-color: rgba(255, 255, 255, 0.15);
   border-radius: 0.375rem;
 }

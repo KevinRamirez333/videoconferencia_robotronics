@@ -6,4 +6,5 @@ export const usuarioServicio = {
     crearUsuario: (datos: Partial<IUsuario>) => usuarioRepositorio.crear(datos),
     actualizarUsuario: (id: string, datos: Partial<IUsuario>) => usuarioRepositorio.actualizar(id, datos),
     cambiarEstadoUsuario: (id: string, activo: boolean) => usuarioRepositorio.cambiarEstado(id, activo),
+    cambiarContrasenaUsuario: (id: string, contrasena: string) => usuarioRepositorio.cambiarContrasena(id, contrasena),
 };

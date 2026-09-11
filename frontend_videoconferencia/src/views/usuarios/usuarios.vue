@@ -2,24 +2,21 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { usuarioServicio, type Usuario } from '@/services/usuario.servicio'
+import CrearUsuario from './crearUsuario.vue'
+import CambiarContrasena from './cambiarContrasena.vue'
 
 const usuarios = ref<Usuario[]>([])
 const cargando = ref(false)
 const errorCarga = ref('')
 
 const mostrarModal = ref(false)
-const modoEdicion = ref(false)
-const usuarioEditandoId = ref<string | null>(null)
-const guardando = ref(false)
-const errorFormulario = ref('')
-const formulario = ref({
-  nombre: '',
-  correo: '',
-  contrasena: '',
-})
+const usuarioEditando = ref<Usuario | null>(null)
 
 const idCambiandoEstado = ref<string | null>(null)
 const errorEstado = ref('')
+
+const mostrarModalContrasena = ref(false)
+const usuarioCambiandoContrasenaId = ref<string | null>(null)
 
 const obtenerMensajeError = (error: unknown, mensajePorDefecto: string): string => {
   if (axios.isAxiosError(error) && error.response?.data?.mensaje) {
@@ -40,27 +37,13 @@ const cargarUsuarios = async () => {
   }
 }
 
-const limpiarFormulario = () => {
-  formulario.value = { nombre: '', correo: '', contrasena: '' }
-  errorFormulario.value = ''
-}
-
 const abrirModalCrear = () => {
-  modoEdicion.value = false
-  usuarioEditandoId.value = null
-  limpiarFormulario()
+  usuarioEditando.value = null
   mostrarModal.value = true
 }
 
 const abrirModalEditar = (usuario: Usuario) => {
-  modoEdicion.value = true
-  usuarioEditandoId.value = usuario._id
-  errorFormulario.value = ''
-  formulario.value = {
-    nombre: usuario.nombre,
-    correo: usuario.correo,
-    contrasena: '',
-  }
+  usuarioEditando.value = usuario
   mostrarModal.value = true
 }
 
@@ -68,51 +51,14 @@ const cerrarModal = () => {
   mostrarModal.value = false
 }
 
-const registrarUsuario = async () => {
-  errorFormulario.value = ''
-  guardando.value = true
-  try {
-    const nuevoUsuario = await usuarioServicio.crearUsuario(formulario.value)
-    usuarios.value.unshift(nuevoUsuario)
-    cerrarModal()
-  } catch (error) {
-    errorFormulario.value = obtenerMensajeError(error, 'No se pudo crear el usuario.')
-  } finally {
-    guardando.value = false
+const usuarioGuardado = (usuario: Usuario) => {
+  const indice = usuarios.value.findIndex((elemento) => elemento._id === usuario._id)
+  if (indice !== -1) {
+    usuarios.value[indice] = usuario
+  } else {
+    usuarios.value.unshift(usuario)
   }
-}
-
-const actualizarUsuario = async () => {
-  if (!usuarioEditandoId.value) {
-    return
-  }
-
-  errorFormulario.value = ''
-  guardando.value = true
-  try {
-    const datos = {
-      nombre: formulario.value.nombre,
-      correo: formulario.value.correo,
-      ...(formulario.value.contrasena ? { contrasena: formulario.value.contrasena } : {}),
-    }
-    const usuarioActualizado = await usuarioServicio.actualizarUsuario(usuarioEditandoId.value, datos)
-    const indice = usuarios.value.findIndex((usuario) => usuario._id === usuarioActualizado._id)
-    if (indice !== -1) {
-      usuarios.value[indice] = usuarioActualizado
-    }
-    cerrarModal()
-  } catch (error) {
-    errorFormulario.value = obtenerMensajeError(error, 'No se pudo actualizar el usuario.')
-  } finally {
-    guardando.value = false
-  }
-}
-
-const guardarUsuario = () => {
-  if (modoEdicion.value) {
-    return actualizarUsuario()
-  }
-  return registrarUsuario()
+  cerrarModal()
 }
 
 const alternarEstadoUsuario = async (usuario: Usuario) => {
@@ -129,6 +75,15 @@ const alternarEstadoUsuario = async (usuario: Usuario) => {
   } finally {
     idCambiandoEstado.value = null
   }
+}
+
+const abrirModalContrasena = (usuario: Usuario) => {
+  usuarioCambiandoContrasenaId.value = usuario._id
+  mostrarModalContrasena.value = true
+}
+
+const cerrarModalContrasena = () => {
+  mostrarModalContrasena.value = false
 }
 
 const formatearFecha = (fecha: string): string => {
@@ -219,6 +174,14 @@ onMounted(cargarUsuarios)
                   </button>
                   <button
                     type="button"
+                    class="btn btn-outline-secondary btn-sm"
+                    @click="abrirModalContrasena(usuario)"
+                  >
+                    <i class="bi bi-key me-1"></i>
+                    Cambiar contraseña
+                  </button>
+                  <button
+                    type="button"
                     class="btn btn-sm"
                     :class="usuario.activo ? 'btn-outline-danger' : 'btn-outline-success'"
                     :disabled="idCambiandoEstado === usuario._id"
@@ -239,67 +202,14 @@ onMounted(cargarUsuarios)
       </div>
     </div>
 
-    <div v-if="mostrarModal" class="modal fade show d-block" tabindex="-1" role="dialog">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <form @submit.prevent="guardarUsuario">
-            <div class="modal-header">
-              <h2 class="modal-title h5">{{ modoEdicion ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
-              <button type="button" class="btn-close" aria-label="Cerrar" @click="cerrarModal"></button>
-            </div>
-            <div class="modal-body">
-              <div v-if="errorFormulario" class="alert alert-danger" role="alert">
-                {{ errorFormulario }}
-              </div>
-              <div class="mb-3">
-                <label for="campo-nombre" class="form-label">Nombre</label>
-                <input
-                  id="campo-nombre"
-                  v-model="formulario.nombre"
-                  type="text"
-                  class="form-control"
-                  required
-                />
-              </div>
-              <div class="mb-3">
-                <label for="campo-correo" class="form-label">Correo</label>
-                <input
-                  id="campo-correo"
-                  v-model="formulario.correo"
-                  type="email"
-                  class="form-control"
-                  required
-                />
-              </div>
-              <div class="mb-3">
-                <label for="campo-contrasena" class="form-label">
-                  Contraseña
-                  <span v-if="modoEdicion" class="text-muted fw-normal">(dejar en blanco para no cambiarla)</span>
-                </label>
-                <input
-                  id="campo-contrasena"
-                  v-model="formulario.contrasena"
-                  type="password"
-                  class="form-control"
-                  minlength="6"
-                  :required="!modoEdicion"
-                />
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" :disabled="guardando" @click="cerrarModal">
-                Cancelar
-              </button>
-              <button type="submit" class="btn btn-primary" :disabled="guardando">
-                <span v-if="guardando" class="spinner-border spinner-border-sm me-1" role="status"></span>
-                Guardar
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-    <div v-if="mostrarModal" class="modal-backdrop fade show"></div>
+    <CrearUsuario :mostrar="mostrarModal" :usuario="usuarioEditando" @cerrar="cerrarModal" @guardado="usuarioGuardado" />
+
+    <CambiarContrasena
+      :mostrar="mostrarModalContrasena"
+      :usuario-id="usuarioCambiandoContrasenaId"
+      @cerrar="cerrarModalContrasena"
+      @guardado="cerrarModalContrasena"
+    />
   </div>
 </template>
 

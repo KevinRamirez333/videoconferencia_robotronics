@@ -39,3 +39,21 @@ export const cambiarEstadoUsuario = async (req: Request, res: Response): Promise
 
     res.json(usuario);
 };
+
+export const cambiarContrasenaUsuario = async (req: Request, res: Response): Promise<void> => {
+    const { contrasena } = req.body;
+
+    if (typeof contrasena !== 'string' || contrasena.length < 6) {
+        res.status(400).json({ mensaje: 'La contraseña es obligatoria y debe tener al menos 6 caracteres' });
+        return;
+    }
+
+    const usuario = await usuarioServicio.cambiarContrasenaUsuario(req.params.id as string, contrasena);
+
+    if (!usuario) {
+        res.status(404).json({ mensaje: 'Usuario no encontrado' });
+        return;
+    }
+
+    res.json(usuario);
+};

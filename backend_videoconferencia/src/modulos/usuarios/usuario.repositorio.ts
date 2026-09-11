@@ -18,13 +18,21 @@ export const usuarioRepositorio = {
         if (datos.correo !== undefined) {
             usuario.correo = datos.correo;
         }
-        if (datos.contrasena) {
-            usuario.contrasena = datos.contrasena;
-        }
 
         return usuario.save();
     },
 
     cambiarEstado: (id: string, activo: boolean) =>
         Usuario.findByIdAndUpdate(id, { activo }, { new: true }),
+
+    cambiarContrasena: async (id: string, contrasena: string) => {
+        const usuario = await Usuario.findById(id);
+        if (!usuario) {
+            return null;
+        }
+
+        usuario.contrasena = contrasena;
+
+        return usuario.save();
+    },
 };

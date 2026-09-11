@@ -17,7 +17,6 @@ export interface DatosNuevoUsuario {
 export interface DatosActualizarUsuario {
   nombre: string
   correo: string
-  contrasena?: string
 }
 
 export const usuarioServicio = {
@@ -38,6 +37,11 @@ export const usuarioServicio = {
 
   cambiarEstadoUsuario: async (id: string, activo: boolean): Promise<Usuario> => {
     const respuesta = await api.patch<Usuario>(`/usuarios/${id}/estado`, { activo })
+    return respuesta.data
+  },
+
+  cambiarContrasenaUsuario: async (id: string, contrasena: string): Promise<Usuario> => {
+    const respuesta = await api.patch<Usuario>(`/usuarios/${id}/contrasena`, { contrasena })
     return respuesta.data
   },
 }

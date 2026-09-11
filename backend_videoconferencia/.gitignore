@@ -20,6 +20,6 @@ certs/
 # Sistema operativo
 .DS_Store
 Thumbs.db
-
+backend_videoconferencia/certs/
 # IDE
 .vscode/

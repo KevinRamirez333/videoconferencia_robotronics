@@ -1,5 +1,6 @@
 import api from './api'
 
+<<<<<<< HEAD
 export type EstadoSesion = 'activa' | 'finalizada' | 'anulada'
 
 export interface AnfitrionSesion {
@@ -14,11 +15,19 @@ export interface Sesion {
   // de endpoints (crear, actualizar, obtener por id) solo devuelven el id.
   anfitrionId: string | AnfitrionSesion
   estado: EstadoSesion
+=======
+export interface Sesion {
+  _id: string
+  titulo: string
+  anfitrionId: string
+  estado: 'activa' | 'finalizada'
+>>>>>>> origin/feature/UsuariosParticipantes
   inicioEn?: string
   finEn?: string
   creadoEn: string
 }
 
+<<<<<<< HEAD
 export function idDelAnfitrion(sesion: Sesion): string {
   return typeof sesion.anfitrionId === 'string' ? sesion.anfitrionId : sesion.anfitrionId._id
 }
@@ -64,5 +73,16 @@ export const sesionServicio = {
   async anularSesion(id: string): Promise<Sesion> {
     const { data } = await api.patch<Sesion>(`/sesiones/${id}/anular`)
     return data
+=======
+export const sesionServicio = {
+  listarRecientes: async (limite = 5): Promise<Sesion[]> => {
+    const respuesta = await api.get<Sesion[]>('/sesiones/recientes', { params: { limite } })
+    return respuesta.data
+  },
+
+  buscarPorTexto: async (texto: string): Promise<Sesion[]> => {
+    const respuesta = await api.get<Sesion[]>('/sesiones/buscar', { params: { q: texto } })
+    return respuesta.data
+>>>>>>> origin/feature/UsuariosParticipantes
   },
 }
